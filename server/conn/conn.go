@@ -45,8 +45,10 @@ func (hc *HttpConn) ReadLoop() {
 		err := hc.ReadBuf.ReadAReqFrom(curReq, hc.Conn)
 		if err != nil {
 			hc.Close()
-			if err != io.EOF {
-				//panic(err)
+			if err == io.EOF {
+				println(hc.Conn,"closed")
+			}else{
+				panic(err)
 			}
 			return
 		}
@@ -76,7 +78,7 @@ func (hc *HttpConn) handle(req *req.Request, reqId uint64) {
 		Body:    make([]byte, 0),
 	}
 	handle := hc.m.Match(req)
-	if handle == nil{
+	if handle == nil {
 		return
 	}
 
@@ -108,6 +110,7 @@ func release(req *req.Request) {
 func (hc *HttpConn) WriteResponse(res *resp.Response, id uint64) error {
 	res.ContentLength = len(res.Body)
 	res.Headers[constant.ContentLength] = strconv.Itoa(res.ContentLength)
+	res.Headers["Connection"] = "Keep-Alive"
 	size := 0
 	if statLine, ok := constant.RespStatusLine[res.Status]; ok {
 		size += len(statLine) + 2

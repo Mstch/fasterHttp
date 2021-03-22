@@ -31,6 +31,7 @@ func (s *Server) Serve() error {
 		}
 		ss := conn.CreateHttpConn(c, s.m)
 		go ss.Serve()
+		println(c, "new conn created")
 	}
 }
 

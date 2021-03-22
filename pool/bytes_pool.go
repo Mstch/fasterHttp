@@ -6,12 +6,15 @@ import (
 	"slowhttp/utils"
 )
 
-var bytesPool []map[int][][]byte
+var bytesPool [][][][]byte
 
 func init() {
-	bytesPool = make([]map[int][][]byte, runtime.GOMAXPROCS(0))
+	bytesPool = make([][][][]byte, runtime.GOMAXPROCS(0))
 	for i := range bytesPool {
-		bytesPool[i] = make(map[int][][]byte)
+		bytesPool[i] = make([][][]byte, 26)
+		for pi := range bytesPool[i] {
+			bytesPool[i][pi] = make([][]byte, 0)
+		}
 	}
 }
 func GetBytes(need int) []byte {
@@ -22,9 +25,6 @@ func GetBytes(need int) []byte {
 		localI = bits.Len64(uint64(need)) - 6
 	}
 	blp := bytesPool[utils.ProcPin()]
-	if _, ok := (blp)[localI]; !ok {
-		(blp)[localI] = make([][]byte, 0)
-	}
 	if len((blp)[localI]) == 0 {
 		(blp)[localI] = append((blp)[localI], make([]byte, 64<<localI))
 	}
@@ -40,9 +40,6 @@ func PutBytes(buf []byte) {
 	}
 	localI := bits.Len64(uint64(cap(buf))) - 7
 	blp := bytesPool[utils.ProcPin()]
-	if _, ok := (blp)[localI]; !ok {
-		(blp)[localI] = make([][]byte, 0)
-	}
 	(blp)[localI] = append((blp)[localI], buf[:cap(buf)])
 	utils.ProcUnpin()
 }
